@@ -1,0 +1,1 @@
+"""MrKarirBot application package."""
