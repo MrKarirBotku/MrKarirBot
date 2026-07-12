@@ -1,1 +1,1 @@
-
+"""Paket utama aplikasi MrKarirBot."""
