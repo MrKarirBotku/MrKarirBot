@@ -3,5 +3,3 @@
 
 class CvService:
     """Placeholder service boundary for future cv features."""
-
-    pass

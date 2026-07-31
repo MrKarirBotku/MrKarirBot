@@ -1,1 +1,1 @@
-from app.database.models.user import *  # noqa: F403
+from app.database.models.user import *

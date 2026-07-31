@@ -1,9 +1,8 @@
-from app.schemas.job import JobRead
-from app.sources.base import JobSource
+from app.sources.base import JobSource, SourceJob
 
 
 class ManualJobSource(JobSource):
     name = "manual"
 
-    async def search(self, query: str, limit: int = 10) -> list[JobRead]:
+    async def fetch(self, query: str = "", limit: int = 100) -> list[SourceJob]:
         return []

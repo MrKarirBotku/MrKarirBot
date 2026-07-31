@@ -1,9 +1,14 @@
-from telegram import Update
+from html import escape
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
-from app.services.ai.service import AIService
+
 from app.bot.keyboards.main import back_menu, main_menu
 from app.bot.messages import HELP, WELCOME
 from app.bot.states import BotState
+from app.database.session import AsyncSessionLocal
+from app.services.ai.service import AIService
+from app.services.jobs.service import JobService
 
 STATE_KEY = "mrkarirbot_state"
 
@@ -16,6 +21,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(HELP, reply_markup=main_menu())
+
+
+async def search_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = " ".join(context.args).strip()
+    if not query:
+        context.user_data[STATE_KEY] = BotState.JOB_SEARCH
+        await update.message.reply_text(
+            "Kirim kata kunci setelah /cari. Contoh: /cari customer support",
+            reply_markup=back_menu(),
+        )
+        return
+    await _send_job_results(update, query=query)
+
+
+async def remote_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = " ".join(context.args).strip()
+    await _send_job_results(update, query=query, remote_only=True)
 
 
 async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -57,12 +79,58 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     state = context.user_data.get(STATE_KEY, BotState.AI_CHAT)
     ai = AIService()
     if state == BotState.JOB_SEARCH:
-        prompt = f"Rekomendasikan strategi pencarian lowongan untuk kata kunci: {message}"
+        await _send_job_results(update, query=message)
+        return
     elif state == BotState.ATS_REVIEW:
         prompt = f"Review CV berikut agar ATS friendly dan beri checklist perbaikan:\n{message}"
     elif state == BotState.INTERVIEW_COACH:
-        prompt = f"Buat simulasi interview untuk posisi {message}: 5 pertanyaan dan contoh jawaban STAR."
+        prompt = (
+            f"Buat simulasi interview untuk posisi {message}: 5 pertanyaan dan contoh jawaban STAR."
+        )
     else:
         prompt = message
     reply = await ai.career_chat(prompt)
     await update.message.reply_text(reply[:3900], reply_markup=main_menu())
+
+
+async def _send_job_results(
+    update: Update,
+    query: str = "",
+    remote_only: bool = False,
+) -> None:
+    async with AsyncSessionLocal() as db:
+        jobs = await JobService().search(
+            db,
+            query=query,
+            limit=5,
+            remote_only=remote_only,
+        )
+
+    if not jobs:
+        await update.message.reply_text(
+            "Belum ada lowongan yang cocok. Coba kata kunci lain atau tunggu sinkronisasi berikutnya.",
+            reply_markup=main_menu(),
+        )
+        return
+
+    await update.message.reply_text(f"Ditemukan {len(jobs)} lowongan terbaru:")
+    for job in jobs:
+        remote_label = "🌍 Remote\n" if job.is_remote else ""
+        text = (
+            f"<b>{escape(job.title)}</b>\n"
+            f"🏢 {escape(job.company)}\n"
+            f"📍 {escape(job.location)}\n"
+            f"{remote_label}"
+            f"🔎 Sumber: {escape(job.source_name)}"
+        )
+        keyboard = None
+        if job.source_url:
+            keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("Lihat & Lamar", url=job.source_url)]]
+            )
+        await update.message.reply_text(
+            text,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup=keyboard,
+        )

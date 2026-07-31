@@ -1,6 +1,3 @@
-fastapi
-uvicorn[standard]
-python-dotenv
-redis
-asyncpg
-sqlalchemy
+# Compatibility entrypoint for platforms that install requirements.txt.
+# Runtime dependencies are managed in pyproject.toml.
+-e .

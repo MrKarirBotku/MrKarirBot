@@ -1,6 +1,7 @@
+from app.sources.arbeitnow import ArbeitnowJobSource
 from app.sources.base import JobSource
-from app.sources.manual import ManualJobSource
+from app.sources.remotive import RemotiveJobSource
 
 
 def get_job_sources() -> list[JobSource]:
-    return [ManualJobSource()]
+    return [RemotiveJobSource(), ArbeitnowJobSource()]

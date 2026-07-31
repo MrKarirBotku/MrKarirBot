@@ -4,7 +4,8 @@ Temukan Karier Impianmu Bersama AI.
 Pilih fitur di bawah ini:"""
 
 HELP = """Gunakan menu untuk memilih layanan:
-• 🔍 Cari Lowongan: rekomendasi kata kunci lowongan.
+• /cari posisi: cari lowongan asli berdasarkan posisi.
+• /remote posisi: cari lowongan remote.
 • 🤖 AI Karier: tanya strategi karier.
 • 📄 ATS CV Review: tempel teks CV untuk review.
 • 🎤 Interview Coach: latihan pertanyaan interview.

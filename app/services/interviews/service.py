@@ -3,5 +3,3 @@
 
 class InterviewsService:
     """Placeholder service boundary for future interviews features."""
-
-    pass
