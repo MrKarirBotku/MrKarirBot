@@ -1,23 +1,24 @@
 from datetime import datetime
+from decimal import Decimal
+from uuid import UUID
 
 from pydantic import BaseModel, HttpUrl
 
 
 class JobRead(BaseModel):
-    id: int
+    id: UUID
     external_id: str | None = None
     title: str
     company: str
-    location: str
+    location: str | None = None
     description: str
-    salary_min: int | None = None
-    salary_max: int | None = None
-    salary_text: str | None = None
+    salary_min: Decimal | None = None
+    salary_max: Decimal | None = None
     job_type: str | None = None
     is_remote: bool = False
     source_name: str
-    source_url: HttpUrl | None = None
-    published_at: datetime | None = None
+    source_url: HttpUrl
+    published_at: datetime
     expires_at: datetime | None = None
     is_active: bool = True
 

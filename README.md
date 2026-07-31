@@ -69,7 +69,7 @@ ruff check .
 ## Deployment
 
 1. Simpan seluruh nilai `.env.example` sebagai environment variable/secret platform.
-2. Jalankan migration sekali dengan `alembic upgrade head`.
+2. Gunakan migration Supabase yang dikelola pada project produksi. Jangan menjalankan migration Alembic lama terhadap database Supabase yang sudah berisi skema premium.
 3. Buat service web dengan command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
 4. Buat service worker dari repo yang sama dengan command `python scripts/run_job_worker.py`.
 5. Isi `TELEGRAM_CHANNEL_ID=@MrKarirAI` dan jadikan bot sebagai admin channel.

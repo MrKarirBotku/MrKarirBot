@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from html import escape
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -27,6 +27,9 @@ class TelegramChannelPublisher:
             select(Job)
             .where(
                 Job.is_active.is_(True),
+                Job.is_demo.is_(False),
+                Job.fraud_risk_level != "high",
+                or_(Job.expires_at.is_(None), Job.expires_at >= datetime.now(UTC)),
                 Job.channel_posted_at.is_(None),
                 Job.source_url.is_not(None),
             )
@@ -42,7 +45,7 @@ class TelegramChannelPublisher:
                 parse_mode="HTML",
                 disable_web_page_preview=True,
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("Lihat & Lamar", url=job.source_url)]]
+                    [[InlineKeyboardButton("Lihat & Lamar", url=job.apply_url or job.source_url)]]
                 ),
             )
             job.channel_posted_at = datetime.now(UTC)
@@ -58,7 +61,7 @@ class TelegramChannelPublisher:
             "🔥 <b>LOWONGAN TERBARU</b>\n\n"
             f"<b>{escape(job.title)}</b>\n"
             f"🏢 {escape(job.company)}\n"
-            f"📍 {escape(job.location)}\n"
+            f"📍 {escape(job.location or 'Lokasi tidak disebutkan')}\n"
             f"{remote}{job_type}"
             f"🔎 Sumber: {escape(job.source_name)}\n\n"
             "Lamar hanya melalui tautan sumber resmi. Jangan membayar biaya rekrutmen."

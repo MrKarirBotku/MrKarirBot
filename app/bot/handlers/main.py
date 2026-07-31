@@ -119,7 +119,7 @@ async def _send_job_results(
         text = (
             f"<b>{escape(job.title)}</b>\n"
             f"🏢 {escape(job.company)}\n"
-            f"📍 {escape(job.location)}\n"
+            f"📍 {escape(job.location or 'Lokasi tidak disebutkan')}\n"
             f"{remote_label}"
             f"🔎 Sumber: {escape(job.source_name)}"
         )

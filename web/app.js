@@ -23,7 +23,7 @@ function renderJob(job) {
   node.querySelector(".company").textContent = job.company;
 
   const meta = node.querySelector(".job-meta");
-  [job.location, job.is_remote ? "Remote" : null, job.job_type, job.salary_text]
+  [job.location, job.is_remote ? "Remote" : null, job.job_type]
     .filter(Boolean)
     .forEach((value) => {
       const chip = document.createElement("span");

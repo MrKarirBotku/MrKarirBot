@@ -19,3 +19,22 @@ def parse_datetime(value: str | int | None) -> datetime | None:
     except ValueError:
         return None
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def normalize_job_type(value: str | None) -> str | None:
+    if not value:
+        return None
+    normalized = re.sub(r"[^a-z]+", "_", value.casefold()).strip("_")
+    aliases = {
+        "fulltime": "full_time",
+        "full_time": "full_time",
+        "parttime": "part_time",
+        "part_time": "part_time",
+        "contractor": "contract",
+        "contract": "contract",
+        "freelance": "freelance",
+        "intern": "internship",
+        "internship": "internship",
+        "temporary": "temporary",
+    }
+    return aliases.get(normalized)

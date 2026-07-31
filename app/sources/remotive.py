@@ -1,7 +1,7 @@
 import httpx
 
 from app.sources.base import JobSource, SourceJob
-from app.sources.utils import clean_html, parse_datetime
+from app.sources.utils import clean_html, normalize_job_type, parse_datetime
 
 
 class RemotiveJobSource(JobSource):
@@ -26,7 +26,7 @@ class RemotiveJobSource(JobSource):
                     location=item.get("candidate_required_location") or "Remote",
                     description=clean_html(item.get("description", "")),
                     salary_text=item.get("salary") or None,
-                    job_type=item.get("job_type") or None,
+                    job_type=normalize_job_type(item.get("job_type")),
                     is_remote=True,
                     source_name=self.name,
                     source_url=item["url"],

@@ -3,7 +3,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.job import Job
@@ -47,7 +47,19 @@ class JobSyncService:
             stats.fetched += len(listings)
             for listing in listings:
                 fingerprint = create_fingerprint(listing)
-                job = await db.scalar(select(Job).where(Job.fingerprint == fingerprint))
+                job = await db.scalar(
+                    select(Job)
+                    .where(
+                        or_(
+                            Job.fingerprint == fingerprint,
+                            and_(
+                                Job.source_name == listing.source_name,
+                                Job.external_id == listing.external_id,
+                            ),
+                        )
+                    )
+                    .limit(1)
+                )
                 values = self._job_values(listing, fingerprint, now)
                 if job is None:
                     db.add(Job(**values))
@@ -73,13 +85,18 @@ class JobSyncService:
             "company": listing.company,
             "location": listing.location,
             "description": listing.description,
-            "salary_text": listing.salary_text,
             "job_type": listing.job_type,
             "is_remote": listing.is_remote,
+            "work_system": "remote" if listing.is_remote else None,
             "source_name": listing.source_name,
             "source_url": str(listing.source_url),
-            "published_at": listing.published_at,
+            "apply_url": str(listing.source_url),
+            "published_at": listing.published_at or now,
             "expires_at": listing.expires_at,
             "last_seen_at": now,
             "is_active": True,
+            "is_verified": False,
+            "is_demo": False,
+            "verification_status": "published",
+            "fraud_risk_level": "unknown",
         }

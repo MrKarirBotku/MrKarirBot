@@ -1,7 +1,7 @@
 import httpx
 
 from app.sources.base import JobSource, SourceJob
-from app.sources.utils import clean_html, parse_datetime
+from app.sources.utils import clean_html, normalize_job_type, parse_datetime
 
 
 class ArbeitnowJobSource(JobSource):
@@ -29,7 +29,7 @@ class ArbeitnowJobSource(JobSource):
                     company=item["company_name"].strip(),
                     location=item.get("location") or "Europe",
                     description=clean_html(item.get("description", "")),
-                    job_type=", ".join(job_types) or None,
+                    job_type=normalize_job_type(job_types[0] if job_types else None),
                     is_remote=bool(item.get("remote")),
                     source_name=self.name,
                     source_url=item["url"],

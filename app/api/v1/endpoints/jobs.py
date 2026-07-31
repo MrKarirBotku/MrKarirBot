@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +54,7 @@ async def publish_jobs(
 
 @router.get("/{job_id}", response_model=JobRead)
 async def get_job(
-    job_id: int,
+    job_id: UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> JobRead:
     job = await JobService().get(db, job_id)
