@@ -1,6 +1,8 @@
 from functools import lru_cache
+
 from telegram import Update
 from telegram.ext import Application
+
 from app.bot.application import build_application
 
 

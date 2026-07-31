@@ -1,7 +1,7 @@
-from time import perf_counter
+import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
-import logging
+from time import perf_counter
 
 logger = logging.getLogger(__name__)
 

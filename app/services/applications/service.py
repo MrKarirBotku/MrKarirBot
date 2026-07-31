@@ -3,5 +3,3 @@
 
 class ApplicationsService:
     """Placeholder service boundary for future applications features."""
-
-    pass

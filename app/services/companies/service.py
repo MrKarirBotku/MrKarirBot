@@ -3,5 +3,3 @@
 
 class CompaniesService:
     """Placeholder service boundary for future companies features."""
-
-    pass

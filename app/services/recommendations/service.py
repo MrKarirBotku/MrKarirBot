@@ -3,5 +3,3 @@
 
 class RecommendationsService:
     """Placeholder service boundary for future recommendations features."""
-
-    pass

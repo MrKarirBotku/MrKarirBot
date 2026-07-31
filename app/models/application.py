@@ -1,1 +1,1 @@
-from app.database.models.application import *  # noqa: F403
+from app.database.models.application import *

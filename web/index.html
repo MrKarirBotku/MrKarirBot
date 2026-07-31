@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="MrKarir AI membantu pencari kerja menemukan lowongan online dan remote dari sumber resmi."
+    />
+    <title>MrKarir AI — Cari Lowongan Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="MrKarir AI">
+        <span class="brand-mark">M</span>
+        <span>MrKarir <strong>AI</strong></span>
+      </a>
+      <nav aria-label="Navigasi utama">
+        <a href="#lowongan">Lowongan</a>
+        <a href="#cara-kerja">Cara Kerja</a>
+        <a
+          class="nav-cta"
+          href="https://t.me/MrKarirAI"
+          target="_blank"
+          rel="noreferrer"
+        >Telegram</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> Lowongan terverifikasi, diperbarui otomatis</p>
+          <h1>Karier berikutnya<br />dimulai dari <em>sini.</em></h1>
+          <p class="hero-text">
+            Temukan pekerjaan online dan remote dari sumber resmi. Cari lebih cepat,
+            periksa detailnya, lalu lamar langsung pada halaman penyedia lowongan.
+          </p>
+          <form id="search-form" class="search-box" role="search">
+            <label class="sr-only" for="search-input">Posisi atau perusahaan</label>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" />
+            </svg>
+            <input id="search-input" name="q" placeholder="Posisi, perusahaan, atau lokasi" />
+            <button type="submit">Cari lowongan</button>
+          </form>
+          <div class="quick-links" aria-label="Pencarian populer">
+            <span>Populer:</span>
+            <button data-query="customer support">Customer Support</button>
+            <button data-query="data entry">Data Entry</button>
+            <button data-query="IT support">IT Support</button>
+          </div>
+        </div>
+        <aside class="hero-panel" aria-label="Keunggulan MrKarir AI">
+          <div class="panel-glow"></div>
+          <p class="panel-label">Pencarian cerdas</p>
+          <h2>Satu pencarian.<br />Banyak sumber.</h2>
+          <div class="metric-grid">
+            <article><strong>24/7</strong><span>Sinkronisasi</span></article>
+            <article><strong>100%</strong><span>Tautan sumber</span></article>
+            <article><strong>0</strong><span>Biaya melamar</span></article>
+            <article><strong>AI</strong><span>Asisten karier</span></article>
+          </div>
+          <p class="safety-note">Selalu periksa perusahaan dan jangan membayar biaya rekrutmen.</p>
+        </aside>
+      </section>
+
+      <section id="lowongan" class="jobs-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow"><span></span> Peluang terbaru</p>
+            <h2>Lowongan untuk Anda</h2>
+          </div>
+          <label class="remote-filter">
+            <input id="remote-only" type="checkbox" />
+            <span></span> Hanya remote
+          </label>
+        </div>
+        <p id="result-summary" class="result-summary" aria-live="polite">Memuat lowongan terbaru…</p>
+        <div id="job-list" class="job-list" aria-live="polite"></div>
+        <button id="load-more" class="load-more" type="button" hidden>Muat lebih banyak</button>
+      </section>
+
+      <section id="cara-kerja" class="how-section">
+        <div>
+          <p class="eyebrow light"><span></span> Mudah dan transparan</p>
+          <h2>Dari pencarian<br />hingga lamaran.</h2>
+        </div>
+        <ol>
+          <li><span>01</span><div><strong>Cari</strong><p>Masukkan posisi, perusahaan, atau lokasi yang Anda inginkan.</p></div></li>
+          <li><span>02</span><div><strong>Periksa</strong><p>Baca detail dan lihat sumber asli setiap lowongan.</p></div></li>
+          <li><span>03</span><div><strong>Lamar</strong><p>Lanjutkan ke situs resmi penyedia lowongan tanpa perantara.</p></div></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      <div class="brand"><span class="brand-mark">M</span><span>MrKarir <strong>AI</strong></span></div>
+      <p>© 2026 MrKarir AI. Dikembangkan oleh KUSNADI YA.</p>
+      <a href="mailto:mrkarirbot@gmail.com">mrkarirbot@gmail.com</a>
+    </footer>
+
+    <template id="job-template">
+      <article class="job-card">
+        <div class="company-avatar"></div>
+        <div class="job-main">
+          <div class="job-topline"><span class="source-badge"></span><time></time></div>
+          <h3></h3>
+          <p class="company"></p>
+          <div class="job-meta"></div>
+        </div>
+        <a class="apply-link" target="_blank" rel="noreferrer">Lihat & lamar <span>↗</span></a>
+      </article>
+    </template>
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>

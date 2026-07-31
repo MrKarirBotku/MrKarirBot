@@ -3,5 +3,3 @@
 
 class NotificationsService:
     """Placeholder service boundary for future notifications features."""
-
-    pass

@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from app.api.v1 import ai, health, status, telegram
 from app.api.v1.endpoints import auth, jobs
 
