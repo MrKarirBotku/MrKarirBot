@@ -20,3 +20,7 @@ def configure_logging(level: str = "INFO") -> None:
     handler = logging.StreamHandler()
     handler.setFormatter(JsonFormatter())
     logging.basicConfig(level=getattr(logging, level.upper(), logging.INFO), handlers=[handler])
+    # httpx logs complete request URLs at INFO. Telegram authenticates through a
+    # token embedded in the URL path, so INFO request logging would disclose the
+    # credential to the deployment log stream.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
