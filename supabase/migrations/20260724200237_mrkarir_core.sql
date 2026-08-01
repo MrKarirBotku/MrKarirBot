@@ -1,6 +1,18 @@
 -- MrKarir AI core schema. All user-owned tables are protected with RLS.
 create extension if not exists pgcrypto;
 
+create or replace function public.set_mrkarir_updated_at()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- This table predated the recorded production migration history. Reconstruct it
 -- here so the recovered history can bootstrap a new database deterministically.
 create table if not exists public.jobs (
