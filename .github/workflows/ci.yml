@@ -4,6 +4,13 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -18,4 +25,36 @@ jobs:
       - run: pip install pytest==9.1.1 pytest-asyncio==1.4.0 ruff==0.16.1
       - run: ruff check .
       - run: python -m compileall app scripts tests alembic
+      - name: Verify recovered Supabase migrations
+        run: sha256sum --check supabase/migrations/manifest.sha256
       - run: pytest
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build --tag mrkarir-ai:ci .
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.111.0
+      - name: Start disposable Supabase stack and apply migrations
+        run: supabase start
+      - name: Rebuild database from migration history
+        run: supabase db reset --local
+      - name: Verify schema and RLS baseline
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql "postgresql://postgres@127.0.0.1:54322/postgres" \
+            --set ON_ERROR_STOP=1 \
+            --file supabase/tests/baseline.sql
+      - name: Stop disposable Supabase stack
+        if: always()
+        run: supabase stop --no-backup

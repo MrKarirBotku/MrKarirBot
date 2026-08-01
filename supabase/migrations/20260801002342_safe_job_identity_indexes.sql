@@ -1,5 +1,3 @@
--- Safe compatibility migration for the existing production schema.
--- Partial indexes exclude demo fixtures and do not rewrite or delete rows.
 create unique index if not exists jobs_real_deduplication_key_unique_idx
   on public.jobs (deduplication_key)
   where deduplication_key is not null and not is_demo;
