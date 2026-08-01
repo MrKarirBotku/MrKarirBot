@@ -43,7 +43,13 @@ class Settings(BaseSettings):
 
     @property
     def allowed_hosts(self) -> list[str]:
-        hosts = {"localhost", "127.0.0.1", "testserver"}
+        hosts = {
+            "localhost",
+            "127.0.0.1",
+            "testserver",
+            "mrkarirbot",
+            "*.railway.app",
+        }
         for value in self.allowed_origins:
             if hostname := urlparse(value).hostname:
                 hosts.add(hostname)
