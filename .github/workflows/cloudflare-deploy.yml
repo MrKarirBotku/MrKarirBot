@@ -2,6 +2,16 @@ name: Deploy Cloudflare Edge
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cloudflare-deploy.yml"
+      - "web/**"
+      - "src/cloudflare-worker.ts"
+      - "wrangler.jsonc"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.cloudflare.json"
 
 permissions:
   contents: read
