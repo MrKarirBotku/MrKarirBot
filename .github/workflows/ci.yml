@@ -25,6 +25,8 @@ jobs:
       - run: pip install pytest==9.1.1 pytest-asyncio==1.4.0 ruff==0.16.1
       - run: ruff check .
       - run: python -m compileall app scripts tests alembic
+      - name: Verify recovered Supabase migrations
+        run: sha256sum --check supabase/migrations/manifest.sha256
       - run: pytest
 
   container:

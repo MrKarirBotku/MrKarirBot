@@ -2,9 +2,9 @@
 
 ## Docker Compose
 
-> **Peringatan:** dependency container dan health check sudah dikonfigurasi, tetapi repository belum
-> memiliki baseline schema lengkap. Fresh database belum dapat menjalankan API lowongan sampai
-> baseline Supabase direkonstruksi. Jangan gunakan Compose sebagai bukti production readiness.
+> **Peringatan:** 13 migration production sudah dipulihkan dan dikunci checksum-nya, tetapi belum
+> diuji pada project Supabase kosong. Jangan gunakan Compose sebagai bukti disaster-recovery
+> readiness sampai fresh migration test dan schema-drift check lulus.
 
 ```bash
 cp .env.example .env
