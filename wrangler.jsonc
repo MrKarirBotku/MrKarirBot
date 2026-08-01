@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "mrkarir-ai-edge",
+  "main": "src/cloudflare-worker.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "./web",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*",
+      "/docs*",
+      "/redoc*",
+      "/openapi.json",
+      "/robots.txt",
+      "/sitemap.xml",
+      "/manifest.webmanifest",
+      "/ads.txt"
+    ]
+  },
+  "vars": {
+    "BACKEND_ORIGIN": "https://mrkarirbot-production.up.railway.app"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01
+    }
+  }
+}
