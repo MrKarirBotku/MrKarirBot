@@ -1,5 +1,7 @@
+from datetime import UTC, datetime, timedelta
+
 from app.database.models.job import Job
-from app.services.jobs.sync import create_fingerprint
+from app.services.jobs.sync import JobSyncService, create_fingerprint
 from app.sources.base import SourceJob
 from app.sources.utils import clean_html, normalize_job_type, parse_datetime
 
@@ -40,3 +42,38 @@ def test_job_model_maps_to_existing_supabase_columns() -> None:
     assert "employment_type" in Job.__table__.c
     assert "deduplication_key" in Job.__table__.c
     assert "channel_posted_at" in Job.__table__.c
+
+
+class ExpiredSource:
+    name = "Expired"
+
+    async def fetch(self, query: str = "", limit: int = 100) -> list[SourceJob]:
+        return [
+            SourceJob(
+                external_id="expired-1",
+                title="Expired role",
+                company="Example",
+                description="No longer open",
+                source_name=self.name,
+                source_url="https://example.com/expired",
+                expires_at=datetime.now(UTC) - timedelta(days=1),
+            )
+        ]
+
+
+class CommitOnlySession:
+    def __init__(self) -> None:
+        self.committed = False
+
+    async def commit(self) -> None:
+        self.committed = True
+
+
+async def test_sync_skips_expired_jobs_before_database_write() -> None:
+    session = CommitOnlySession()
+    stats = await JobSyncService(sources=[ExpiredSource()]).sync(session)
+
+    assert stats.fetched == 1
+    assert stats.skipped == 1
+    assert stats.created == 0
+    assert session.committed is True

@@ -1,12 +1,17 @@
+import asyncio
+import logging
 from datetime import UTC, datetime
 from html import escape
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import RetryAfter, TelegramError
 
 from app.core.config import get_settings
 from app.database.models.job import Job
+
+logger = logging.getLogger(__name__)
 
 
 class TelegramChannelPublisher:
@@ -19,7 +24,7 @@ class TelegramChannelPublisher:
     def enabled(self) -> bool:
         return self.bot is not None and bool(self.channel_id)
 
-    async def publish_pending(self, db: AsyncSession, limit: int = 10) -> int:
+    async def publish_pending(self, db: AsyncSession, limit: int = 5) -> int:
         if not self.enabled or self.bot is None:
             return 0
 
@@ -39,19 +44,45 @@ class TelegramChannelPublisher:
         jobs = list(result.scalars().all())
         published = 0
         for job in jobs:
-            await self.bot.send_message(
-                chat_id=self.channel_id,
-                text=self._format(job),
-                parse_mode="HTML",
-                disable_web_page_preview=True,
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("Lihat & Lamar", url=job.apply_url or job.source_url)]]
-                ),
-            )
+            try:
+                await self._send(job)
+            except RetryAfter as exc:
+                # Telegram provides the retry delay; retry this job once without
+                # aborting the remaining publication batch.
+                await asyncio.sleep(float(exc.retry_after) + 0.1)
+                try:
+                    await self._send(job)
+                except TelegramError as retry_exc:
+                    logger.warning(
+                        "channel_publish_failed job_id=%s error=%s",
+                        job.id,
+                        type(retry_exc).__name__,
+                    )
+                    continue
+            except TelegramError as exc:
+                logger.warning(
+                    "channel_publish_failed job_id=%s error=%s",
+                    job.id,
+                    type(exc).__name__,
+                )
+                continue
+
             job.channel_posted_at = datetime.now(UTC)
+            await db.commit()
             published += 1
-        await db.commit()
         return published
+
+    async def _send(self, job: Job) -> None:
+        assert self.bot is not None
+        await self.bot.send_message(
+            chat_id=self.channel_id,
+            text=self._format(job),
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("Lihat & Lamar", url=job.apply_url or job.source_url)]]
+            ),
+        )
 
     @staticmethod
     def _format(job: Job) -> str:

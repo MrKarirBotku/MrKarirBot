@@ -8,6 +8,13 @@
       content="MrKarir AI membantu pencari kerja menemukan lowongan online dan remote dari sumber resmi."
     />
     <title>MrKarir AI — Cari Lowongan Online</title>
+    <link rel="canonical" href="https://mrkarirai.web.id/" />
+    <meta property="og:title" content="MrKarir AI — Temukan Karier Impianmu Bersama AI" />
+    <meta property="og:description" content="Cari lowongan dari sumber resmi dan lamar langsung pada penyedianya." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mrkarirai.web.id/" />
+    <meta name="theme-color" content="#0d745c" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -37,7 +44,7 @@
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow"><span></span> Lowongan terverifikasi, diperbarui otomatis</p>
+          <p class="eyebrow"><span></span> Lowongan dari sumber resmi, diperbarui otomatis</p>
           <h1>Karier berikutnya<br />dimulai dari <em>sini.</em></h1>
           <p class="hero-text">
             Temukan pekerjaan online dan remote dari sumber resmi. Cari lebih cepat,
@@ -84,6 +91,28 @@
           </label>
         </div>
         <p id="result-summary" class="result-summary" aria-live="polite">Memuat lowongan terbaru…</p>
+        <form id="job-filters" class="job-filters" aria-label="Filter lowongan">
+          <label>Lokasi<input id="location-filter" name="location" placeholder="Contoh: Jakarta" /></label>
+          <label>Sistem kerja
+            <select id="work-system-filter" name="work_system">
+              <option value="">Semua</option><option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option><option value="onsite">Onsite</option>
+            </select>
+          </label>
+          <label>Tipe kerja
+            <select id="employment-filter" name="employment_type">
+              <option value="">Semua</option><option value="full_time">Penuh waktu</option>
+              <option value="part_time">Paruh waktu</option><option value="contract">Kontrak</option>
+              <option value="freelance">Freelance</option><option value="internship">Magang</option>
+            </select>
+          </label>
+          <label>Urutkan
+            <select id="sort-filter" name="sort">
+              <option value="newest">Terbaru</option><option value="relevance">Relevansi</option>
+              <option value="salary">Gaji</option>
+            </select>
+          </label>
+        </form>
         <div id="job-list" class="job-list" aria-live="polite"></div>
         <button id="load-more" class="load-more" type="button" hidden>Muat lebih banyak</button>
       </section>

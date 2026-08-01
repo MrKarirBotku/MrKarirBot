@@ -1,47 +1,39 @@
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, HttpUrl
 
-from app.core.security import create_access_token, hash_password, verify_password
-from app.database.models.user import User
-from app.database.session import get_db
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
-from app.schemas.user import UserRead
+from app.api.dependencies.auth import require_user
+from app.core.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def register(
-    payload: RegisterRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> UserRead:
-    existing = await db.scalar(select(User).where(User.email == payload.email))
-    if existing:
-        raise HTTPException(status_code=409, detail="Email sudah terdaftar")
-    user = User(
-        email=payload.email,
-        full_name=payload.full_name,
-        hashed_password=hash_password(payload.password),
+class AuthConfig(BaseModel):
+    supabase_url: HttpUrl
+    publishable_key: str
+
+
+class CurrentUser(BaseModel):
+    id: UUID
+    email: str | None = None
+    role: str
+
+
+@router.get("/config", response_model=AuthConfig)
+async def auth_config() -> AuthConfig:
+    settings = get_settings()
+    if not settings.supabase_url or not settings.supabase_publishable_key:
+        raise HTTPException(status_code=503, detail="Supabase Auth belum dikonfigurasi")
+    return AuthConfig(
+        supabase_url=settings.supabase_url,
+        publishable_key=settings.supabase_publishable_key,
     )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return UserRead.model_validate(user)
 
 
-@router.post("/login", response_model=TokenResponse)
-async def login(
-    payload: LoginRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> TokenResponse:
-    user = await db.scalar(select(User).where(User.email == payload.email))
-    if (
-        not user
-        or not user.hashed_password
-        or not verify_password(payload.password, user.hashed_password)
-    ):
-        raise HTTPException(status_code=401, detail="Email atau password salah")
-    return TokenResponse(access_token=create_access_token(str(user.email), user.role))
+@router.get("/me", response_model=CurrentUser)
+async def current_user(
+    user: Annotated[dict[str, str | UUID | None], Depends(require_user)],
+) -> CurrentUser:
+    return CurrentUser.model_validate(user)

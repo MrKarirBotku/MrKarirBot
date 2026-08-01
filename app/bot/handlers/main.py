@@ -23,6 +23,78 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text(HELP, reply_markup=main_menu())
 
 
+async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await start(update, context)
+
+
+async def ats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _enter_state(update, context, BotState.ATS_REVIEW, "Kirim teks CV untuk review ATS awal.")
+
+
+async def interview_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _enter_state(
+        update,
+        context,
+        BotState.INTERVIEW_COACH,
+        "Kirim posisi target untuk latihan interview dan jawaban STAR.",
+    )
+
+
+async def roadmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _enter_state(
+        update,
+        context,
+        BotState.CAREER_ROADMAP,
+        "Kirim posisi target dan pengalaman Anda saat ini untuk roadmap 30/60/90 hari.",
+    )
+
+
+async def salary_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _enter_state(
+        update,
+        context,
+        BotState.SALARY_GUIDANCE,
+        "Kirim posisi, level, lokasi, mata uang, dan pengalaman untuk panduan riset gaji.",
+    )
+
+
+async def company_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _enter_state(
+        update,
+        context,
+        BotState.COMPANY_RESEARCH,
+        "Kirim nama perusahaan dan informasi yang ingin Anda verifikasi.",
+    )
+
+
+async def scam_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _enter_state(
+        update,
+        context,
+        BotState.SCAM_CHECK,
+        "Kirim ciri-ciri pesan atau proses rekrutmen. Hapus nama, nomor, dan data pribadi pihak lain.",
+    )
+
+
+async def privacy_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "Privasi: jangan kirim NIK, alamat lengkap, kata sandi, atau dokumen identitas. "
+        "Email, nomor telepon, dan NIK dalam input AI akan disamarkan sebelum diproses. "
+        "Lowongan hanya dibuka melalui tautan sumber aslinya.",
+        reply_markup=main_menu(),
+    )
+
+
+async def _enter_state(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    state: BotState,
+    prompt: str,
+) -> None:
+    context.user_data[STATE_KEY] = state
+    await update.message.reply_text(prompt, reply_markup=back_menu())
+
+
 async def search_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = " ".join(context.args).strip()
     if not query:
@@ -72,6 +144,18 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             "🎤 Kirim posisi target Anda, lalu MrKarirBot akan memberi simulasi pertanyaan interview.",
             reply_markup=back_menu(),
         )
+    elif data == "roadmap":
+        context.user_data[STATE_KEY] = BotState.CAREER_ROADMAP
+        await query.edit_message_text(
+            "🗺️ Kirim posisi target dan pengalaman Anda untuk roadmap 30/60/90 hari.",
+            reply_markup=back_menu(),
+        )
+    elif data == "scam":
+        context.user_data[STATE_KEY] = BotState.SCAM_CHECK
+        await query.edit_message_text(
+            "🛡️ Kirim ciri proses rekrutmen yang ingin diperiksa. Jangan kirim data pribadi.",
+            reply_markup=back_menu(),
+        )
 
 
 async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -82,14 +166,19 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await _send_job_results(update, query=message)
         return
     elif state == BotState.ATS_REVIEW:
-        prompt = f"Review CV berikut agar ATS friendly dan beri checklist perbaikan:\n{message}"
+        reply = await ai.ats_review(message)
     elif state == BotState.INTERVIEW_COACH:
-        prompt = (
-            f"Buat simulasi interview untuk posisi {message}: 5 pertanyaan dan contoh jawaban STAR."
-        )
+        reply = await ai.interview_coach(message)
+    elif state == BotState.CAREER_ROADMAP:
+        reply = await ai.career_roadmap(message)
+    elif state == BotState.SALARY_GUIDANCE:
+        reply = await ai.salary_guidance(message)
+    elif state == BotState.COMPANY_RESEARCH:
+        reply = await ai.company_research(message)
+    elif state == BotState.SCAM_CHECK:
+        reply = await ai.scam_explanation(message)
     else:
-        prompt = message
-    reply = await ai.career_chat(prompt)
+        reply = await ai.career_chat(message)
     await update.message.reply_text(reply[:3900], reply_markup=main_menu())
 
 
@@ -99,7 +188,7 @@ async def _send_job_results(
     remote_only: bool = False,
 ) -> None:
     async with AsyncSessionLocal() as db:
-        jobs = await JobService().search(
+        jobs, total = await JobService().search(
             db,
             query=query,
             limit=5,
@@ -113,7 +202,7 @@ async def _send_job_results(
         )
         return
 
-    await update.message.reply_text(f"Ditemukan {len(jobs)} lowongan terbaru:")
+    await update.message.reply_text(f"Menampilkan {len(jobs)} dari {total} lowongan yang cocok:")
     for job in jobs:
         remote_label = "🌍 Remote\n" if job.is_remote else ""
         text = (

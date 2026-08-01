@@ -1,36 +1,53 @@
 from typing import Annotated
+from uuid import UUID
 
+import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 
 from app.core.config import get_settings
-from app.core.security import ALGORITHM
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
-def require_user(
+async def require_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
-) -> dict[str, str]:
+) -> dict[str, str | UUID | None]:
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token wajib disertakan"
         )
+    settings = get_settings()
+    if not settings.supabase_url or not settings.supabase_publishable_key:
+        raise HTTPException(status_code=503, detail="Supabase Auth belum dikonfigurasi")
+
     try:
-        payload = jwt.decode(
-            credentials.credentials, get_settings().secret_key, algorithms=[ALGORITHM]
-        )
-    except JWTError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token tidak valid"
-        ) from exc
-    return {"subject": str(payload.get("sub")), "role": str(payload.get("role", "user"))}
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(
+                f"{settings.supabase_url.rstrip('/')}/auth/v1/user",
+                headers={
+                    "apikey": settings.supabase_publishable_key,
+                    "Authorization": f"Bearer {credentials.credentials}",
+                },
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=503, detail="Supabase Auth sementara tidak tersedia") from exc
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=401, detail="Token tidak valid atau sudah kedaluwarsa")
+
+    payload = response.json()
+    app_metadata = payload.get("app_metadata") or {}
+    return {
+        "id": UUID(payload["id"]),
+        "email": payload.get("email"),
+        "role": str(app_metadata.get("role", "user")),
+    }
 
 
-def require_admin(
-    current_user: Annotated[dict[str, str], Depends(require_user)],
-) -> dict[str, str]:
-    if current_user["role"] != "admin":
+async def require_admin(
+    current_user: Annotated[dict[str, str | UUID | None], Depends(require_user)],
+) -> dict[str, str | UUID | None]:
+    if current_user["role"] not in {"admin", "superadmin"}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Akses admin diperlukan")
     return current_user
