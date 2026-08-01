@@ -7,6 +7,9 @@ venv/
 *.egg-info/
 build/
 dist/
+node_modules/
+.wrangler/
+worker-configuration.d.ts
 .env
 .env.*
 !.env.example
