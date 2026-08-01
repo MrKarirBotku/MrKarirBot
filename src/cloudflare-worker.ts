@@ -22,6 +22,11 @@ async function proxyToBackend(request: Request, env: Env): Promise<Response> {
   backendUrl.search = incomingUrl.search;
 
   const headers = new Headers(request.headers);
+  // Do not forward edge-routing headers to a different Cloudflare-backed origin.
+  // Keeping the public Host/CDN loop headers can route the subrequest back here.
+  for (const header of ["host", "cf-ray", "cf-visitor", "cf-worker", "cf-ew-via", "cdn-loop"]) {
+    headers.delete(header);
+  }
   headers.set("X-Forwarded-Host", incomingUrl.host);
   headers.set("X-Forwarded-Proto", incomingUrl.protocol.replace(":", ""));
 
