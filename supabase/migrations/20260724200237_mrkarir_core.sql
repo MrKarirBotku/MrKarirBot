@@ -1,6 +1,61 @@
 -- MrKarir AI core schema. All user-owned tables are protected with RLS.
 create extension if not exists pgcrypto;
 
+-- This table predated the recorded production migration history. Reconstruct it
+-- here so the recovered history can bootstrap a new database deterministically.
+create table if not exists public.jobs (
+  id uuid primary key default gen_random_uuid(),
+  external_id text,
+  source text not null,
+  source_url text not null,
+  apply_url text,
+  title text not null,
+  company_name text not null,
+  company_logo text,
+  location text,
+  city text,
+  province text,
+  country text,
+  work_system text,
+  employment_type text,
+  experience_level text,
+  education_level text,
+  salary_min numeric,
+  salary_max numeric,
+  salary_currency text,
+  salary_period text,
+  salary_is_visible boolean not null default false,
+  description text not null default '',
+  responsibilities text[] not null default '{}',
+  requirements text[] not null default '{}',
+  skills text[] not null default '{}',
+  benefits text[] not null default '{}',
+  published_at timestamptz not null,
+  expires_at timestamptz,
+  is_active boolean not null default true,
+  is_verified boolean not null default false,
+  is_demo boolean not null default false,
+  apply_url_checked_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (source, external_id)
+);
+
+create index if not exists jobs_active_published_idx
+  on public.jobs (published_at desc) where is_active;
+alter table public.jobs enable row level security;
+grant select on public.jobs to anon, authenticated;
+grant insert, update, delete on public.jobs to authenticated;
+create policy "jobs_public_or_admin_read" on public.jobs for select to anon, authenticated
+  using (is_active and (expires_at is null or expires_at >= now()));
+create policy "jobs_admin_insert" on public.jobs for insert to authenticated
+  with check (coalesce((select auth.jwt()) -> 'app_metadata' ->> 'role', '') in ('admin','super_admin'));
+create policy "jobs_admin_update" on public.jobs for update to authenticated
+  using (coalesce((select auth.jwt()) -> 'app_metadata' ->> 'role', '') in ('admin','super_admin'))
+  with check (coalesce((select auth.jwt()) -> 'app_metadata' ->> 'role', '') in ('admin','super_admin'));
+create policy "jobs_admin_delete" on public.jobs for delete to authenticated
+  using (coalesce((select auth.jwt()) -> 'app_metadata' ->> 'role', '') in ('admin','super_admin'));
+
 create table if not exists public.user_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
@@ -111,4 +166,3 @@ revoke all on function public.handle_new_mrkarir_user() from authenticated;
 drop trigger if exists on_auth_user_created_mrkarir on auth.users;
 create trigger on_auth_user_created_mrkarir after insert on auth.users
 for each row execute function public.handle_new_mrkarir_user();
-
