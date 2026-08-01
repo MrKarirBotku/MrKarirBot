@@ -1,4 +1,15 @@
-const state = { query: "", remote: false, offset: 0, limit: 20, loading: false };
+const initialParams = new URLSearchParams(window.location.search);
+const state = {
+  query: initialParams.get("q") || "",
+  remote: initialParams.get("remote") === "true",
+  location: initialParams.get("location") || "",
+  workSystem: initialParams.get("work_system") || "",
+  employmentType: initialParams.get("employment_type") || "",
+  sort: initialParams.get("sort") || "newest",
+  offset: 0,
+  limit: 20,
+  loading: false,
+};
 
 const form = document.querySelector("#search-form");
 const input = document.querySelector("#search-input");
@@ -7,6 +18,17 @@ const list = document.querySelector("#job-list");
 const summary = document.querySelector("#result-summary");
 const loadMore = document.querySelector("#load-more");
 const template = document.querySelector("#job-template");
+const locationFilter = document.querySelector("#location-filter");
+const workSystemFilter = document.querySelector("#work-system-filter");
+const employmentFilter = document.querySelector("#employment-filter");
+const sortFilter = document.querySelector("#sort-filter");
+
+input.value = state.query;
+remoteOnly.checked = state.remote;
+locationFilter.value = state.location;
+workSystemFilter.value = state.workSystem;
+employmentFilter.value = state.employmentType;
+sortFilter.value = state.sort;
 
 function formatDate(value) {
   if (!value) return "Baru diperbarui";
@@ -23,7 +45,10 @@ function renderJob(job) {
   node.querySelector(".company").textContent = job.company;
 
   const meta = node.querySelector(".job-meta");
-  [job.location, job.is_remote ? "Remote" : null, job.job_type]
+  const salary = job.salary_is_visible && (job.salary_min || job.salary_max)
+    ? `${job.salary_currency || ""} ${job.salary_min || ""}${job.salary_max ? `–${job.salary_max}` : ""}`.trim()
+    : null;
+  [job.location, job.is_remote ? "Remote" : job.work_system, job.job_type, salary]
     .filter(Boolean)
     .forEach((value) => {
       const chip = document.createElement("span");
@@ -48,20 +73,30 @@ async function loadJobs({ append = false } = {}) {
     limit: String(state.limit),
     offset: String(state.offset),
   });
+  if (state.location) params.set("location", state.location);
+  if (state.workSystem) params.set("work_system", state.workSystem);
+  if (state.employmentType) params.set("employment_type", state.employmentType);
+  params.set("sort", state.sort);
+  const shareParams = new URLSearchParams(params);
+  shareParams.delete("offset");
+  shareParams.delete("limit");
+  if (!state.query) shareParams.delete("q");
+  if (!state.remote) shareParams.delete("remote");
+  window.history.replaceState({}, "", `${window.location.pathname}${shareParams.size ? `?${shareParams}` : ""}`);
 
   try {
     const response = await fetch(`/api/v1/jobs?${params}`);
     if (!response.ok) throw new Error("API tidak tersedia");
-    const jobs = await response.json();
+    const page = await response.json();
     if (!append) list.replaceChildren();
-    jobs.forEach(renderJob);
+    page.items.forEach(renderJob);
 
     const shown = list.querySelectorAll(".job-card").length;
     summary.textContent = shown
       ? `${shown} lowongan ditampilkan${state.query ? ` untuk “${state.query}”` : ""}.`
       : "Belum ada lowongan yang cocok dengan pencarian ini.";
     if (!shown) list.innerHTML = '<div class="empty">Coba kata kunci atau filter yang berbeda.</div>';
-    loadMore.hidden = jobs.length < state.limit;
+    loadMore.hidden = !page.has_more;
   } catch (error) {
     if (!append) list.innerHTML = '<div class="empty">Lowongan belum dapat dimuat. Silakan coba kembali.</div>';
     summary.textContent = error.message;
@@ -82,6 +117,33 @@ remoteOnly.addEventListener("change", () => {
   state.remote = remoteOnly.checked;
   state.offset = 0;
   loadJobs();
+});
+
+let debounceTimer;
+input.addEventListener("input", () => {
+  window.clearTimeout(debounceTimer);
+  debounceTimer = window.setTimeout(() => {
+    state.query = input.value.trim();
+    state.offset = 0;
+    loadJobs();
+  }, 350);
+});
+
+function applyFilters() {
+  state.location = locationFilter.value.trim();
+  state.workSystem = workSystemFilter.value;
+  state.employmentType = employmentFilter.value;
+  state.sort = sortFilter.value;
+  state.offset = 0;
+  loadJobs();
+}
+
+locationFilter.addEventListener("input", () => {
+  window.clearTimeout(debounceTimer);
+  debounceTimer = window.setTimeout(applyFilters, 350);
+});
+[workSystemFilter, employmentFilter, sortFilter].forEach((element) => {
+  element.addEventListener("change", applyFilters);
 });
 
 loadMore.addEventListener("click", () => {

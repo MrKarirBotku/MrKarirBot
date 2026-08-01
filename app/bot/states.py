@@ -7,3 +7,7 @@ class BotState(IntEnum):
     AI_CHAT = 2
     ATS_REVIEW = 3
     INTERVIEW_COACH = 4
+    CAREER_ROADMAP = 5
+    SALARY_GUIDANCE = 6
+    COMPANY_RESEARCH = 7
+    SCAM_CHECK = 8

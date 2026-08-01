@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Numeric, Text, Uuid, func
+from sqlalchemy import ARRAY, Boolean, DateTime, Numeric, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -19,15 +19,28 @@ class Job(Base):
     title: Mapped[str] = mapped_column(Text)
     company: Mapped[str] = mapped_column("company_name", Text)
     location: Mapped[str | None] = mapped_column(Text)
+    city: Mapped[str | None] = mapped_column(Text)
+    province: Mapped[str | None] = mapped_column(Text)
+    country: Mapped[str | None] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
     salary_min: Mapped[Decimal | None] = mapped_column(Numeric)
     salary_max: Mapped[Decimal | None] = mapped_column(Numeric)
     job_type: Mapped[str | None] = mapped_column("employment_type", Text)
+    experience_level: Mapped[str | None] = mapped_column(Text)
+    education_level: Mapped[str | None] = mapped_column(Text)
+    salary_currency: Mapped[str | None] = mapped_column(Text)
+    salary_period: Mapped[str | None] = mapped_column(Text)
+    salary_is_visible: Mapped[bool] = mapped_column(Boolean, default=False)
+    skills: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    benefits: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
     is_remote: Mapped[bool] = mapped_column(Boolean, default=False)
     work_system: Mapped[str | None] = mapped_column(Text)
     source_name: Mapped[str] = mapped_column("source", Text)
     source_url: Mapped[str] = mapped_column(Text)
     apply_url: Mapped[str | None] = mapped_column(Text)
+    canonical_url: Mapped[str | None] = mapped_column(Text)
+    normalized_title: Mapped[str | None] = mapped_column(Text)
+    summary: Mapped[str | None] = mapped_column(Text)
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime] = mapped_column(

@@ -2,8 +2,5 @@
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
-[deploy]
-startCommand = "sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port \"$PORT\"'"
-healthcheckPath = "/api/v1/health"
-healthcheckTimeout = 60
-restartPolicyType = "ON_FAILURE"
+# Deploy commands are configured per Railway service. A shared command here
+# would make the worker start the web API instead of scripts/run_job_worker.py.

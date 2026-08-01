@@ -7,6 +7,10 @@ def main_menu() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("🤖 AI Karier", callback_data="ai")],
         [InlineKeyboardButton("📄 ATS CV Review", callback_data="ats")],
         [InlineKeyboardButton("🎤 Interview Coach", callback_data="interview")],
+        [
+            InlineKeyboardButton("🗺️ Roadmap", callback_data="roadmap"),
+            InlineKeyboardButton("🛡️ Cek Scam", callback_data="scam"),
+        ],
     ]
     return InlineKeyboardMarkup(rows)
 

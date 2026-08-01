@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 
 from sqlalchemy import and_, or_, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.job import Job
@@ -16,6 +17,8 @@ class SyncStats:
     fetched: int = 0
     created: int = 0
     updated: int = 0
+    skipped: int = 0
+    failed: int = 0
     errors: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, int | list[str]]:
@@ -41,33 +44,42 @@ class JobSyncService:
                 listings = await source.fetch(query=query, limit=limit)
             # A failed provider must not block synchronization from healthy providers.
             except Exception as exc:  # noqa: BLE001
+                stats.failed += 1
                 stats.errors.append(f"{source.name}: {type(exc).__name__}")
                 continue
 
             stats.fetched += len(listings)
             for listing in listings:
-                fingerprint = create_fingerprint(listing)
-                job = await db.scalar(
-                    select(Job)
-                    .where(
-                        or_(
-                            Job.fingerprint == fingerprint,
-                            and_(
-                                Job.source_name == listing.source_name,
-                                Job.external_id == listing.external_id,
-                            ),
+                if listing.expires_at and listing.expires_at < now:
+                    stats.skipped += 1
+                    continue
+                try:
+                    async with db.begin_nested():
+                        fingerprint = create_fingerprint(listing)
+                        job = await db.scalar(
+                            select(Job)
+                            .where(
+                                or_(
+                                    Job.fingerprint == fingerprint,
+                                    and_(
+                                        Job.source_name == listing.source_name,
+                                        Job.external_id == listing.external_id,
+                                    ),
+                                )
+                            )
+                            .limit(1)
                         )
-                    )
-                    .limit(1)
-                )
-                values = self._job_values(listing, fingerprint, now)
-                if job is None:
-                    db.add(Job(**values))
-                    stats.created += 1
-                else:
-                    for key, value in values.items():
-                        setattr(job, key, value)
-                    stats.updated += 1
+                        values = self._job_values(listing, fingerprint, now)
+                        if job is None:
+                            db.add(Job(**values))
+                            stats.created += 1
+                        else:
+                            for key, value in values.items():
+                                setattr(job, key, value)
+                            stats.updated += 1
+                except SQLAlchemyError as exc:
+                    stats.failed += 1
+                    stats.errors.append(f"{source.name}:database:{type(exc).__name__}")
 
         await db.commit()
         return stats
@@ -91,6 +103,7 @@ class JobSyncService:
             "source_name": listing.source_name,
             "source_url": str(listing.source_url),
             "apply_url": str(listing.source_url),
+            "canonical_url": str(listing.source_url),
             "published_at": listing.published_at or now,
             "expires_at": listing.expires_at,
             "last_seen_at": now,
