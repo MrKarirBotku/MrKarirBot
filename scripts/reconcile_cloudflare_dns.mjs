@@ -18,7 +18,10 @@ async function cloudflare(path, init = {}) {
   });
   const payload = await response.json();
   if (!response.ok || !payload.success) {
-    throw new Error(`Cloudflare API request failed: ${response.status}`);
+    const error = new Error(`Cloudflare API request failed: ${response.status}`);
+    error.status = response.status;
+    error.details = payload.errors;
+    throw error;
   }
   return payload.result;
 }
@@ -55,9 +58,22 @@ console.log(
   ),
 );
 
+let deletedCount = 0;
 for (const record of conflicts) {
-  await cloudflare(`/zones/${zoneId}/dns_records/${record.id}`, { method: "DELETE" });
-  console.log(`Deleted conflicting ${record.type} record for ${record.name}`);
+  try {
+    await cloudflare(`/zones/${zoneId}/dns_records/${record.id}`, { method: "DELETE" });
+    deletedCount += 1;
+    console.log(`Deleted conflicting ${record.type} record for ${record.name}`);
+  } catch (error) {
+    const isLegacySitesRecord =
+      error.status === 400 && record.type === "AAAA" && record.content === "100::";
+    if (!isLegacySitesRecord) {
+      throw error;
+    }
+    console.log(
+      "Legacy Sites-managed AAAA 100:: cannot be deleted through DNS API; continuing so Wrangler can claim the custom domain",
+    );
+  }
 }
 
-console.log(`DNS reconciliation complete; deleted ${conflicts.length} conflicting record(s)`);
+console.log(`DNS reconciliation complete; deleted ${deletedCount} conflicting record(s)`);
