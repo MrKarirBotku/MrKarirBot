@@ -82,6 +82,7 @@ create table if not exists public.saved_jobs (
   job_location text,
   job_mode text,
   source_url text,
+  job_id uuid references public.jobs(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, job_key)
