@@ -1,4 +1,7 @@
-# Roadmap MrKarirBot
+# Roadmap MrKarir AI
+
+Roadmap hasil audit production terbaru tersedia di
+[`AUDIT_2026-08-01.md`](AUDIT_2026-08-01.md). Dokumen tersebut menjadi prioritas eksekusi aktif.
 
 Roadmap aktif MrKarirBot saat ini terdiri dari **2 phase utama**. Integrasi WhatsApp Business API dihapus dari roadmap aktif sementara waktu agar fokus pengembangan tetap pada Telegram Bot dan Website Dashboard.
 

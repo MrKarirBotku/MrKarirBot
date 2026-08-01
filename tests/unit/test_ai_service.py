@@ -26,6 +26,7 @@ async def test_ai_redacts_pii_and_uses_configured_responses_contract() -> None:
     assert answer == "Saran yang aman."
     assert responses.request["model"] == "gpt-5.6-terra"
     assert responses.request["reasoning"] == {"effort": "none"}
+    assert responses.request["store"] is False
     user_input = responses.request["input"][1]["content"]
     assert "nama@example.com" not in user_input
     assert "0812-3456-7890" not in user_input

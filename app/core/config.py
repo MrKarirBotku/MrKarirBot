@@ -1,7 +1,7 @@
 from functools import lru_cache
 from urllib.parse import urlparse
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,6 +34,37 @@ class Settings(BaseSettings):
     ads_txt_content: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @model_validator(mode="after")
+    def validate_production_settings(self) -> "Settings":
+        """Reject unsafe defaults before a production process starts serving traffic."""
+
+        if self.environment.casefold() != "production":
+            return self
+
+        errors: list[str] = []
+        if self.secret_key == "development-only-secret-change-before-production":
+            errors.append("SECRET_KEY masih menggunakan nilai development")
+        if len(self.secret_key) < 48:
+            errors.append("SECRET_KEY production minimal 48 karakter")
+        if not self.database_url.startswith("postgresql+asyncpg://"):
+            errors.append("DATABASE_URL harus memakai PostgreSQL asyncpg")
+        if not self.redis_url.startswith(("redis://", "rediss://")):
+            errors.append("REDIS_URL tidak valid")
+        if not self.site_url.startswith("https://"):
+            errors.append("SITE_URL production harus HTTPS")
+        if not self.app_url.startswith("https://"):
+            errors.append("APP_URL production harus HTTPS")
+        if not self.supabase_url.startswith("https://"):
+            errors.append("SUPABASE_URL production wajib dikonfigurasi")
+        if not self.supabase_publishable_key:
+            errors.append("SUPABASE_PUBLISHABLE_KEY production wajib dikonfigurasi")
+        if self.telegram_bot_token and not self.telegram_webhook_secret:
+            errors.append("TELEGRAM_WEBHOOK_SECRET wajib saat Telegram bot aktif")
+
+        if errors:
+            raise ValueError("Konfigurasi production tidak aman: " + "; ".join(errors))
+        return self
 
     @property
     def allowed_origins(self) -> list[str]:

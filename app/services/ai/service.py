@@ -104,6 +104,9 @@ class AIService:
                 model=self.model,
                 reasoning={"effort": "none"},
                 text={"verbosity": "medium"},
+                # Career data can contain sensitive personal information. Do not persist
+                # API responses unless a future feature explicitly requires it.
+                store=False,
                 input=[
                     {"role": "system", "content": f"{SYSTEM_PROMPT}\n{TASK_PROMPTS[task]}"},
                     {"role": "user", "content": safe_message},
