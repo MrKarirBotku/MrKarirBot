@@ -1,5 +1,6 @@
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
+from app.bot.handlers.admin import admin_command, publish_command
 from app.bot.handlers.main import (
     ats_command,
     company_command,
@@ -36,6 +37,8 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("company", company_command))
     app.add_handler(CommandHandler("scam", scam_command))
     app.add_handler(CommandHandler("privacy", privacy_command))
+    app.add_handler(CommandHandler("admin", admin_command))
+    app.add_handler(CommandHandler("publish", publish_command))
     app.add_handler(CallbackQueryHandler(menu_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_message))
     return app

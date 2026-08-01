@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     telegram_webhook_url: str = ""
     telegram_webhook_secret: str = ""
     telegram_channel_id: str = ""
+    telegram_admin_ids: str = ""
     openai_api_key: str = ""
     openai_model: str = "gpt-5.6-terra"
     openai_timeout_seconds: float = Field(default=45, ge=5, le=120)
@@ -55,6 +56,16 @@ class Settings(BaseSettings):
                 hosts.add(hostname)
         hosts.add("mrkarirbot-production.up.railway.app")
         return sorted(hosts)
+
+    @property
+    def telegram_admin_id_set(self) -> set[int]:
+        """Return valid Telegram user IDs configured as bot administrators."""
+        admin_ids: set[int] = set()
+        for value in self.telegram_admin_ids.split(","):
+            value = value.strip()
+            if value.isdigit():
+                admin_ids.add(int(value))
+        return admin_ids
 
 
 @lru_cache
